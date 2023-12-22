@@ -90,6 +90,10 @@ func (s *Server) handler() {
 	for {
 		request := <-s.requestChan
 		response := s.handle(request)
+		if len(response.GetData()) == 0 {
+			// We don't want to return anything.
+			continue
+		}
 		request.conn.Write(response.Bytes())
 	}
 }
