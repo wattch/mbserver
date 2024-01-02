@@ -55,9 +55,7 @@ func (s *Server) ListenTCP(addressPort string) (err error) {
 		log.Printf("Failed to Listen: %v\n", err)
 		return err
 	}
-	s.listeners = append(s.listeners, listen)
-	go s.accept(listen)
-	return err
+	return s.ListenTCPWithListener(listen)
 }
 
 // ListenTLS starts the Modbus server listening on "address:port".
@@ -67,7 +65,12 @@ func (s *Server) ListenTLS(addressPort string, config *tls.Config) (err error) {
 		log.Printf("Failed to Listen on TLS: %v\n", err)
 		return err
 	}
-	s.listeners = append(s.listeners, listen)
-	go s.accept(listen)
+	return s.ListenTCPWithListener(listen)
+}
+
+// ListenTCPWithListener starts the Modbus server listening on a net.Listener supplied by the client.
+func (s *Server) ListenTCPWithListener(listener net.Listener) (err error) {
+	s.listeners = append(s.listeners, listener)
+	go s.accept(listener)
 	return err
 }

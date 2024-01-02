@@ -12,8 +12,17 @@ import (
 func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 	port, err := serial.Open(serialConfig)
 	if err != nil {
+		// this method returns an error but just fatals if it encounters an error?
 		log.Fatalf("failed to open %s: %v\n", serialConfig.Address, err)
 	}
+	s.ListenRTUWithPort(port)
+
+	return err
+}
+
+// ListenRTUWithPort starts the Modbus server listening to a serial device using a serial.Port
+// provided by the client.
+func (s *Server) ListenRTUWithPort(port serial.Port) {
 	s.ports = append(s.ports, port)
 
 	s.portsWG.Add(1)
@@ -21,12 +30,10 @@ func (s *Server) ListenRTU(serialConfig *serial.Config) (err error) {
 		defer s.portsWG.Done()
 		s.acceptSerialRequests(port)
 	}()
-
-	return err
 }
 
 func (s *Server) acceptSerialRequests(port serial.Port) {
-	SkipFrameError:
+SkipFrameError:
 	for {
 		select {
 		case <-s.portsCloseChan:
@@ -52,7 +59,7 @@ func (s *Server) acceptSerialRequests(port serial.Port) {
 			frame, err := NewRTUFrame(packet)
 			if err != nil {
 				log.Printf("bad serial frame error %v\n", err)
-				//The next line prevents RTU server from exiting when it receives a bad frame. Simply discard the erroneous 
+				//The next line prevents RTU server from exiting when it receives a bad frame. Simply discard the erroneous
 				//frame and wait for next frame by jumping back to the beginning of the 'for' loop.
 				log.Printf("Keep the RTU server running!!\n")
 				continue SkipFrameError
